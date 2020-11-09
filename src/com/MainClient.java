@@ -4,16 +4,24 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.io.File;
 import java.util.ArrayList;
 
 public class MainClient extends JFrame  {
    private  String host, command, username, password;
    private int port;
-    private JFrame main;
+    public static JFrame main, progressPan;
     private JLabel label1, label2, label3, label4, label5;
     private JButton submit;
-    private JPanel mainPanel;
+    public static JPanel mainPanel;
     private TextField commandText;
+    private JTextArea content;
+    private JScrollPane sp;
+    public static  JProgressBar progressBar;
+    public static Dialog dialog;
+    public static JFileChooser fileChooser;
     public MainClient(String host, int port, String username, String password) {
         this.host = host;
         this.port = port;
@@ -55,21 +63,37 @@ public class MainClient extends JFrame  {
 
         label5 = new JLabel();
         label5.setText("Command");
-        label5.setBounds(200, 150, 80, 30);
+        label5.setBounds(200, 350, 80, 30);
         main.add(label5);
 
         commandText = new TextField();
-        commandText.setBounds(300, 150, 200, 30);
+        commandText.setBounds(300, 350, 200, 30);
         main.add(commandText);
+
+        content = new JTextArea();
+        content.getAccessibleContext();
+        sp = new JScrollPane(content);
+        sp.setBounds(50, 150, 500, 200);
+        sp.getAccessibleContext();
+
+
+        main.add(sp);
+
+
+        progressBar = new JProgressBar();
+        progressBar.setBounds(50, 130, 160, 20);
+        progressBar.setBorderPainted(true);
+        main.add(progressBar);
+
+
         submit = new JButton("Submit");
-        submit.setBounds(550, 150, 97, 25);
+        submit.setBounds(550, 350, 97, 25);
         main.add(submit);
         submit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Thread queryThread = new Thread() {
                     public void run()  {
                         executeCommand();
-
                     }
                 };
                 queryThread.start();
@@ -86,6 +110,7 @@ public class MainClient extends JFrame  {
     private void executeCommand() {
         this.command = commandText.getText();
         String[] splitedCommand = this.command.split(" ");
+        content.append(command+"\n");
         if(splitedCommand[0].toLowerCase().compareTo("ls") ==0) {
             ArrayList<String> listDir = new ArrayList<String>();
             try {
@@ -93,28 +118,126 @@ public class MainClient extends JFrame  {
                 listDir = ftpClient.getList();
                 String[] inputlist = new String[listDir.size()];
                 inputlist = listDir.toArray(inputlist);
-                JOptionPane.showMessageDialog(this, inputlist, "List of Files/Folders", JOptionPane.INFORMATION_MESSAGE);
+//                JOptionPane.showMessageDialog(this, inputlist, "List of Files/Folders", JOptionPane.INFORMATION_MESSAGE);
+                for(int index=0; index<inputlist.length; index++) {
+                    content.append(inputlist[index]+"\n");
+                }
+                JScrollBar vertical = sp.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
+
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
             }
         }
-        if(splitedCommand[0].toLowerCase().compareTo("cd") == 0) {
+        else if(splitedCommand[0].toLowerCase().compareTo("cd") == 0) {
             try {
                 FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
-                boolean status = ftpClient.setCd(splitedCommand[1]);
+                String res = ftpClient.setCd(splitedCommand[1]);
+                content.append(res+"\n");
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
             }
 
         }
-        if(splitedCommand[0].toLowerCase().compareTo("get") == 0) {
+        else if(splitedCommand[0].toLowerCase().compareTo("get") == 0) {
             try {
                 FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
-                ftpClient.getFiles(splitedCommand[1]);
+
+                for(int i=1; i<splitedCommand.length; i++) {
+                    ftpClient.getFiles(splitedCommand[i]);
+                }
             } catch (Exception e) {
                 System.out.println("error"+e);
+                e.printStackTrace();
+                return;
+            }
+        }
+        else if(splitedCommand[0].toLowerCase().compareTo("pwd") == 0) {
+            if(splitedCommand.length >1) {
+                JOptionPane.showMessageDialog(main, "Invalid command");
+                return;
+            }
+           try {
+               FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
+                String dir = ftpClient.getCurrentWorkingDir();
+                content.append(dir+"\n");
+           } catch (Exception e) {
+               e.printStackTrace();
+               return;
+           }
+
+        }
+
+        else if(splitedCommand[0].toLowerCase().compareTo("mkdir") == 0) {
+            try {
+                FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
+
+                for(int i=1; i<splitedCommand.length; i++) {
+                   boolean status = ftpClient.newDir(splitedCommand[i]);
+                   if(!status) {
+                       content.append("Cannot create Directory '"+splitedCommand[i]+"': File exists "+"\n");
+                   }
+                }
+            } catch (Exception e) {
+                System.out.println("error"+e);
+                e.printStackTrace();
+                return;
+            }
+        }
+
+        else if(splitedCommand[0].toLowerCase().compareTo("put") == 0) {
+            try{
+                FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
+                 fileChooser = new JFileChooser();
+                ftpClient.sendFile();
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("err"+e);
+                return;
+            }
+        }
+
+        else if (splitedCommand[0].toLowerCase().compareTo("rmdir") == 0) {
+            try {
+                FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
+                ArrayList<String> list = new ArrayList<String>();
+                list = ftpClient.getDir();
+                String [] inputList = new String[list.size()];
+                inputList = list.toArray(inputList);
+                String selection = (String) JOptionPane.showInputDialog(this, "Choose a Folder to delete", "Input", JOptionPane.QUESTION_MESSAGE,
+                        null, inputList, "Titan");
+                System.out.println("selection"+ selection);
+                if(selection == null) {
+                    return;
+                }
+               boolean status = ftpClient.rmDir(selection);
+                if(!status) {
+                    JOptionPane.showMessageDialog(this, "fail to remove: No such a file or directory", "Error",  JOptionPane.ERROR_MESSAGE);
+                }
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+        }
+        else if(splitedCommand[0].toLowerCase().compareTo("delete") ==0) {
+            try {
+                FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
+                ArrayList<String> list = new ArrayList<String>();
+                list = ftpClient.getFilesOnly();
+                String selection = (String) JOptionPane.showInputDialog(this, "Choose a Folder to delete", "Input", JOptionPane.QUESTION_MESSAGE,
+                        null, list.toArray(), "Titan");
+                if(selection == null) {
+                    return;
+                }
+                boolean status = ftpClient.delete(selection);
+                if(!status) {
+                    JOptionPane.showMessageDialog(this, "fail to remove: No such a file or directory", "Error",  JOptionPane.ERROR_MESSAGE);
+                }
+                return;
+            } catch (Exception e) {
                 e.printStackTrace();
                 return;
             }
