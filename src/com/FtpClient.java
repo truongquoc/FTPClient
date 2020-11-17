@@ -17,30 +17,36 @@ public class FtpClient {
     private static FtpClient Instance = null;
     public static String msg ="";
     public final static int FILE_SIZE = 6022386;
-
-private FtpClient(String hostName, int port, String username, String password) throws Exception {
+    public static Socket socket;
+private FtpClient(String hostName, int port, String username, String password)  {
   this.hostname = hostName;
   this.port = port;
   this.username = username;
   this.password = password;
     System.out.println("host: "+this.hostname+" Port: "+this.port);
-  Socket socket = new Socket(hostName, this.port);
-
-  oos = new ObjectOutputStream(socket.getOutputStream());
-  ois = new ObjectInputStream(socket.getInputStream());
-  oos.writeObject(username);
-  oos.writeObject(password);
-  msg = (String) ois.readObject();
-    System.out.println("msg" +msg);
+ try {
+     socket = new Socket(hostName, this.port);
+     oos = new ObjectOutputStream(socket.getOutputStream());
+     ois = new ObjectInputStream(socket.getInputStream());
+     System.out.println("username"+username+" password"+ password);
+     oos.writeObject(username);
+     oos.writeObject(password);
+     msg = (String) ois.readObject();
+ } catch (IOException e) {
+     System.out.println("Io exception");
+     msg = new StringBuilder("Failed").toString();
+ } catch (ClassNotFoundException ex) {
+     System.out.println("not found exception"+ex);
+ }
 }
-    public static FtpClient getInstance(String hostName, int port, String username, String password) throws Exception {
-        if(Instance == null) {
+public static FtpClient getInstance(String hostName, int port, String username, String password) throws Exception {
+    if(Instance == null || msg.compareTo("Failed") == 0) {
             Instance = new FtpClient(hostName, port, username, password);
-        }
-        return Instance;
     }
+    return Instance;
+}
 
-public static ArrayList<String> getList() throws IOException {
+public static ArrayList<String> getList() {
     try {
         ArrayList<String> listDir = new ArrayList<String>();
         oos.writeObject("LS");
@@ -51,6 +57,9 @@ public static ArrayList<String> getList() throws IOException {
         }
         return listDir;
     } catch (Exception e) {
+        MainClient.main.setVisible(false);
+        ClientUI.mainFrame.setVisible(true);
+        Instance = null;
         e.printStackTrace();
         return null;
     }

@@ -51,14 +51,16 @@ public class MainClient extends JFrame  {
         label2.setBackground(Color.GRAY);
         label2.setBorder(BorderFactory.createEtchedBorder());
         mainPanel.add(label2);
-        label3 = new JLabel("Username");
-        label3.setBounds(37, 70, 50, 16);
-
+        label3 = new JLabel("Username: "+username);
+        label3.setBounds(37, 70, 200, 30);
+        label3.setBackground(Color.GRAY);
+        label3.setBorder(BorderFactory.createEtchedBorder());
         mainPanel.add(label3);
 
-        label4 = new JLabel("Password");
-        label4.setBounds(400, 70, 50, 16);
-
+        label4 = new JLabel("Password: "+password);
+        label4.setBounds(400, 70, 200, 30);
+        label4.setBackground(Color.GRAY);
+        label4.setBorder(BorderFactory.createEtchedBorder());
         mainPanel.add(label4);
 
         label5 = new JLabel();
@@ -112,19 +114,24 @@ public class MainClient extends JFrame  {
         String[] splitedCommand = this.command.split(" ");
         content.append(command+"\n");
         if(splitedCommand[0].toLowerCase().compareTo("ls") ==0) {
+//            try {
+//                System.out.println("remote port"+ FtpClient.socket.getInetAddress().isReachable());
+//            } catch (Exception e) {
+//                System.out.println("error"+e.getMessage());
+//            }
+//            if(FtpClient.socket.g)
             ArrayList<String> listDir = new ArrayList<String>();
             try {
                 FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
                 listDir = ftpClient.getList();
                 String[] inputlist = new String[listDir.size()];
                 inputlist = listDir.toArray(inputlist);
-//                JOptionPane.showMessageDialog(this, inputlist, "List of Files/Folders", JOptionPane.INFORMATION_MESSAGE);
                 for(int index=0; index<inputlist.length; index++) {
                     content.append(inputlist[index]+"\n");
                 }
                 JScrollBar vertical = sp.getVerticalScrollBar();
                 vertical.setValue(vertical.getMaximum());
-
+                return;
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
@@ -144,10 +151,15 @@ public class MainClient extends JFrame  {
         else if(splitedCommand[0].toLowerCase().compareTo("get") == 0) {
             try {
                 FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
-
-                for(int i=1; i<splitedCommand.length; i++) {
-                    ftpClient.getFiles(splitedCommand[i]);
+                ArrayList<String> list = new ArrayList<String>();
+                list = ftpClient.getFilesOnly();
+                String selection = (String) JOptionPane.showInputDialog(this, "Choose a File to delete", "Input", JOptionPane.QUESTION_MESSAGE,
+                        null, list.toArray(), "Titan");
+                if(selection == null) {
+                    return;
                 }
+                ftpClient.getFiles(selection);
+
             } catch (Exception e) {
                 System.out.println("error"+e);
                 e.printStackTrace();
@@ -227,7 +239,7 @@ public class MainClient extends JFrame  {
                 FtpClient ftpClient = FtpClient.getInstance(host, port, username, password);
                 ArrayList<String> list = new ArrayList<String>();
                 list = ftpClient.getFilesOnly();
-                String selection = (String) JOptionPane.showInputDialog(this, "Choose a Folder to delete", "Input", JOptionPane.QUESTION_MESSAGE,
+                String selection = (String) JOptionPane.showInputDialog(this, "Choose a File to delete", "Input", JOptionPane.QUESTION_MESSAGE,
                         null, list.toArray(), "Titan");
                 if(selection == null) {
                     return;

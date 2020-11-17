@@ -58,14 +58,14 @@ public class ClientUI extends JFrame implements ActionListener {
         mainPanel.add(port);
 
         label3 = new JLabel("Username");
-        label3.setBounds(37, 70, 50, 16);
+        label3.setBounds(37, 70, 80, 16);
         username = new TextField();
         username.setBounds(150, 70, 169, 30);
         mainPanel.add(label3);
         mainPanel.add(username);
 
         label4 = new JLabel("Password");
-        label4.setBounds(400, 70, 50, 16);
+        label4.setBounds(400, 70, 70, 16);
         password = new TextField();
         password.setBounds(513, 70, 169, 30);
         mainPanel.add(label4);
@@ -84,18 +84,24 @@ public class ClientUI extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            System.out.println("pressed button");
             if(e.getSource() == submit) {
                 String hostname = (String) this.host.getText();
                 String username = (String) this.username.getText();
                 int port = Integer.parseInt(this.port.getText());
                 String password = (String) this.password.getText();
-//              FtpClient ftpClient = new FtpClient(hostname, port, username, password);
+                if(hostname.isEmpty() || username.isEmpty() || password.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Please fill the required fields", "Error",  JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 FtpClient ftpClient = FtpClient.getInstance(hostname, port, username, password);
                 if(ftpClient.msg.compareTo("Success") == 0) {
                     System.out.println("working");
                     mainFrame.setVisible(false);
                     MainClient mainClient = new MainClient(hostname, port, username, password);
+                } else {
+                    System.out.println("message"+ftpClient.msg);
+                    JOptionPane.showMessageDialog(this, "Username or Password are incorrect", "Error",  JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
             }
         } catch (Exception ex) {
