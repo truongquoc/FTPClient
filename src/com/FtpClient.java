@@ -14,7 +14,7 @@ public class FtpClient {
     public static BufferedOutputStream bos = null;
     private String hostname, username, password;
     private int port;
-    private static FtpClient Instance = null;
+    public static FtpClient Instance = null;
     public static String msg ="";
     public final static int FILE_SIZE = 6022386;
     public static Socket socket;
@@ -46,6 +46,11 @@ public static FtpClient getInstance(String hostName, int port, String username, 
     return Instance;
 }
 
+public static void DisConnectServer() throws Exception {
+    socket.close();
+    oos.close();
+    ois.close();
+}
 public static ArrayList<String> getList() {
     try {
         ArrayList<String> listDir = new ArrayList<String>();
@@ -104,12 +109,12 @@ public static String setCd(String path) {
     }
 }
 
-public void getFiles(String filename) {
+public void getFiles(String filename, String destination) {
     try {
         Socket dataSocket = new Socket(this.hostname, this.port -1 );
         oos.writeObject("GET");
         oos.writeObject(filename);
-        File f = new File(filename);
+        File f = new File(destination+"/"+filename);
         ObjectInputStream dis = new ObjectInputStream(dataSocket.getInputStream());
         int length = dis.readInt();
         System.out.println("length"+ length);

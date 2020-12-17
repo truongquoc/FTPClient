@@ -23,16 +23,6 @@ public class ClientUI extends JFrame implements ActionListener {
     public ClientUI(String title) throws IOException, ClassNotFoundException {
         super(title);
         GUI();
-//        Socket socket = new Socket("127.0.0.1", 3306);
-//        oos = new ObjectOutputStream(socket.getOutputStream());
-//        ois = new ObjectInputStream(socket.getInputStream());
-//        while (true) {
-//
-//            String serverResponse = (String) ois.readObject();
-//            temp = temp + serverResponse+ "\n";
-//            content.setText(temp);
-//            System.out.println(serverResponse);
-//        }
     }
     public void GUI() {
         mainFrame = new JFrame();
@@ -40,7 +30,7 @@ public class ClientUI extends JFrame implements ActionListener {
         mainPanel.setLayout(null);
 
         mainFrame.setTitle("FTP Client");
-        mainFrame.setSize(800, 500);
+        mainFrame.setSize(800, 400);
 
         label1 = new JLabel("Host");
         label1.setBounds(37, 13, 50, 16);
@@ -71,8 +61,8 @@ public class ClientUI extends JFrame implements ActionListener {
         mainPanel.add(label4);
         mainPanel.add(password);
 
-        submit = new JButton("Submit");
-        submit.setBounds(400, 100, 97, 25);
+        submit = new JButton("Connect to Server");
+        submit.setBounds(350, 150, 197, 25);
         submit.addActionListener(this);
         mainFrame.add(submit);
         mainFrame.add(mainPanel);
@@ -87,12 +77,13 @@ public class ClientUI extends JFrame implements ActionListener {
             if(e.getSource() == submit) {
                 String hostname = (String) this.host.getText();
                 String username = (String) this.username.getText();
-                int port = Integer.parseInt(this.port.getText());
+
                 String password = (String) this.password.getText();
-                if(hostname.isEmpty() || username.isEmpty() || password.isEmpty()) {
+                if(hostname.isEmpty() || username.isEmpty() || password.isEmpty() || this.port.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(this, "Please fill the required fields", "Error",  JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                int port = Integer.parseInt(this.port.getText());
                 FtpClient ftpClient = FtpClient.getInstance(hostname, port, username, password);
                 if(ftpClient.msg.compareTo("Success") == 0) {
                     System.out.println("working");
